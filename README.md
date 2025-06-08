@@ -31,6 +31,83 @@ Persistence lasts for a few hours (6 hours by default).
 
 ---
 
+## Quick start with AI SDK
+
+Simply replace the default fetch with durablefetch to make sure the AI response is resumed if an existing one is alreay in progress.
+
+```tsx
+import { DefaultChatTransport } from 'ai'
+import { DurableFetchClient } from 'durablefetch'
+
+const df = new DurableFetchClient()
+
+export function Chat({ chatId }) {
+    const api = `/api/chat?chatId=${chatId}`
+
+    useEffect(() => {
+        // if in progress, send message and resume stream with durablefetch
+        df.isInProgress(api).then(({ inProgress }) => {
+            if (inProgress) {
+                const text = localStorage.getItem('lastMessage') || ''
+                return sendMessage({
+                    text,
+                })
+            }
+        })
+    }, [])
+
+    const { messages, sendMessage, error } = useChat({
+        transport: new DefaultChatTransport({ api, fetch: df.fetch }),
+        id: chatId,
+    })
+
+    return (
+        <div className='flex flex-col w-full h-dvh py-8 stretch'>
+            <div className='space-y-4 flex-grow overflow-y-auto'>
+                {messages.map((m) => {
+                    if (!m.parts?.length) return
+                    return (
+                        <div key={m.id} className='max-w-xl mx-auto'>
+                            <div className='font-bold'>{m.role}</div>
+                            <div className='space-y-4'>
+                                {m.parts.map((p, i) => {
+                                    switch (p.type) {
+                                        case 'text':
+                                            return (
+                                                <div key={i}>
+                                                    <p>{p.text}</p>
+                                                </div>
+                                            )
+                                    }
+                                })}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    const message = new FormData(e.currentTarget).get('message')
+                    sendMessage({ text: message })
+                    localStorage.setItem('lastMessage', message)
+                    e.currentTarget.reset()
+                }}
+                className='w-full max-w-xl mx-auto'
+            >
+                <input
+                    autoFocus
+                    className='w-full p-2 border border-gray-300 rounded shadow-xl'
+                    name='message'
+                    placeholder='Say something...'
+                />
+            </form>
+        </div>
+    )
+}
+```
+
 ## Quick start (client SDK)
 
 ```ts
