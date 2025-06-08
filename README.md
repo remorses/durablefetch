@@ -4,14 +4,14 @@
 Send a long-running request (e.g. OpenAI streaming), close the tab, come back later, and pick up the stream exactly where you left off.
 
 - `npm i durablefetch`
-- **Zero-config** CDN endpoint: `https://durablefetch.fumabase.com`
+- **Zero-config** CDN endpoint: `https://durablefetch.com`
 - **Self-host** in minutes (Cloudflare Workers)
 
 ---
 
 ## Example
 
-To see how durablefetch works you can try visiting this url in the browser in different tabs: https://durablefetch.fumabase.com/postman-echo.com/server-events/20?randomId=xxxx
+To see how durablefetch works you can try visiting this url in the browser in different tabs: https://durablefetch.com/postman-echo.com/server-events/20?randomId=xxxx
 
 > [!IMPORTANT]
 > durablefetch identifies requests by the URL, each different request should have an unique URL. For example for a ChatGPT like interface you would use the chat id or message id.
@@ -36,7 +36,7 @@ Persistence lasts for a few hours (6 hours by default).
 ```ts
 import { DurableFetchClient } from 'durablefetch'
 
-const df = new DurableFetchClient() // defaults to durablefetch.fumabase.com
+const df = new DurableFetchClient() // defaults to durablefetch.com
 
 // 1. Start a streaming request
 const res = await df.fetch(
@@ -63,13 +63,13 @@ console.log(status) // { inProgress: true, activeConnections: 1, chunksStored: 4
 durablefetch works by passing the host as the first part of the path, then the path of the url:
 
 ```
-https://durablefetch.fumabase.com/:domain/*
+https://durablefetch.com/:domain/*
 ```
 
 So for example this request makes a fetch to `https://postman-echo.com/server-events/20?randomId=xxxx`
 
 ```
-https://durablefetch.fumabase.com/postman-echo.com/server-events/20?randomId=xxxx
+https://durablefetch.com/postman-echo.com/server-events/20?randomId=xxxx
 ```
 
 Always remember to make your URLs unique and non guessable

@@ -3,12 +3,10 @@
     "account_id": "103e73569e2f6d4aea0fb679ceb8709b",
     "compatibility_date": "2025-05-11",
 
-    "name": "durablefetch-fumadocs-production",
-
-    "compatibility_flags": ["nodejs_compat"],
+    "name": "durablefetch-production",
 
     "route": {
-        "pattern": "durablefetch.fumabase.com",
+        "pattern": "durablefetch.com",
         "custom_domain": true,
     },
     "main": "./src/cloudflare.ts",
@@ -29,7 +27,7 @@
 
     "env": {
         "preview": {
-            "name": "durablefetch-fumadocs-preview",
+            "name": "durablefetch-preview",
             "migrations": [
                 {
                     "tag": "v1",
@@ -37,7 +35,7 @@
                 },
             ],
             "route": {
-                "pattern": "durablefetch-preview.fumabase.com",
+                "pattern": "preview.durablefetch.com",
                 "custom_domain": true,
             },
             "durable_objects": {
