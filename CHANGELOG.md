@@ -1,5 +1,11 @@
 # durablefetch
 
+## 0.1.0
+
+### Minor Changes
+
+-   add support for delete in sdk, clear previous response to resuse the same id
+
 ## 0.0.6
 
 ### Patch Changes

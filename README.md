@@ -133,6 +133,12 @@ const status = await df.isInProgress(
     'https://api.openai.com/v1/chat/completions?chatId=xxx',
 )
 console.log(status) // { inProgress: true, activeConnections: 1, chunksStored: 42, completed: false }
+
+// 4. Delete a stored response (optional)
+const deleteResult = await df.delete(
+    'https://api.openai.com/v1/chat/completions?chatId=xxx',
+)
+console.log(deleteResult) // { success: true, message: "Response deleted successfully" }
 ```
 
 ## Usage with the API (no SDK)

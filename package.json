@@ -1,6 +1,6 @@
 {
     "name": "durablefetch",
-    "version": "0.0.6",
+    "version": "0.1.0",
     "description": "Resumable and durable fetch. Fetch many times, one durable resumable server request",
     "type": "module",
     "main": "./dist/sdk.js",
