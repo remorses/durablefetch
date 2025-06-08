@@ -1,5 +1,11 @@
 # durablefetch
 
+## 0.0.5
+
+### Patch Changes
+
+-   fix use of this. in fetch in case it is not bound correctly
+
 ## 0.0.4
 
 ### Patch Changes

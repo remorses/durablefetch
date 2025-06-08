@@ -45,10 +45,10 @@ export class DurableFetchClient {
         return resolvedUrl
     }
 
-    async fetch(
+    fetch = async (
         input: RequestInfo | URL | string,
         init?: RequestInit,
-    ): Promise<Response> {
+    ): Promise<Response> => {
         const url = this.resolveUrl(input)
         const realHost = url.host
         const realPathname = url.pathname
