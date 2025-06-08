@@ -54,7 +54,7 @@ export class DurableFetchClient {
         const realPathname = url.pathname
         if (isLocalhost(url)) {
             console.warn(
-                `WARNING: durablefetch is bypassed for URL (${url.toString()})`,
+                `WARNING: durablefetch is bypassed for URL ${url.toString()}`,
             )
             return await fetch(url, init)
         }
@@ -74,7 +74,7 @@ export class DurableFetchClient {
 
         if (isLocalhost(urlObj)) {
             logger.warn(
-                `WARNING: durablefetch is bypassed for URL (${url.toString()})`,
+                `WARNING: durablefetch is bypassed for URL ${url.toString()}`,
             )
             return {
                 inProgress: false,
