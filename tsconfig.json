@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "allowJs": false,
+    "composite": true,
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "moduleResolution": "nodenext",
+    "lib": ["ESNext", "dom", "es2022", "es2017", "es7", "es6"],
+    "declaration": true,
+    "declarationMap": true,
+    "strict": true,
+    "downlevelIteration": true,
+    "esModuleInterop": true,
+    "noImplicitAny": false,
+    "useUnknownInCatchVariables": false,
+    "sourceMap": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src"],
+  "exclude": ["**/node_modules", "dist"]
+}
