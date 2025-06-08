@@ -1,17 +1,17 @@
 {
     "name": "durablefetch",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "description": "Resumable and durable fetch. Fetch many times, one durable resumable server request",
     "type": "module",
+    "main": "./dist/sdk.js",
     "repository": "https://github.com/remorses/durablefetch",
     "scripts": {
         "deploy:prod": "tsc && wrangler deploy",
+        "deploy:preview": "tsc && wrangler deploy --env preview",
         "dev": "wrangler dev",
         "prepublishOnly": "tsc",
-        "deploy:preview": "tsc && wrangler deploy --env preview",
-        "test": "doppler -c dev run -u -- vitest"
+        "test": "vitest -u"
     },
-    "main": "./src/sdk.ts",
     "files": [
         "dist",
         "src",
@@ -21,10 +21,10 @@
     "author": "Tommaso De Rossi, morse <beats.by.morse@gmail.com>",
     "license": "",
     "devDependencies": {
+        "@changesets/cli": "^2.29.4",
         "@cloudflare/workers-types": "^4.20250429.0",
         "eventsource-parser": "^3.0.2",
         "vitest": "^3.2.2",
         "wrangler": "^4.19.1"
-    },
-    "dependencies": {}
+    }
 }

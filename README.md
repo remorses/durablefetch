@@ -5,13 +5,16 @@ Send a long-running request (e.g. OpenAI streaming), close the tab, come back la
 
 - `npm i durablefetch`
 - **Zero-config** CDN endpoint: `https://durablefetch.fumabase.com`
-- **Self-host** in minutes (Cloudflare Workers, free tier)
+- **Self-host** in minutes (Cloudflare Workers)
 
 ---
 
 ## Example
 
 To see how durablefetch works you can try visiting this url in the browser in different tabs: https://durablefetch.fumabase.com/postman-echo.com/server-events/20?randomId=xxxx
+
+> ![IMPORTANT]
+> durablefetch identifies requests by the URL, each different request should have an unique URL. For example for a ChatGPT like interface you would use the chat id or message id.
 
 ## Why?
 
@@ -24,7 +27,7 @@ Typical HTTP streams die when the client disconnects.
 4. **Later requests with the same URL** → stored chunks replayed, live stream continues.
 5. Once the origin finishes, the DO marks the conversation complete; subsequent callers just get the full buffered response.
 
-Persistence lasts until you delete it (no automatic TTL).
+Persistence lasts for a few hours (6 hours by default).
 
 ---
 
@@ -36,27 +39,21 @@ import { DurableFetchClient } from 'durablefetch'
 const df = new DurableFetchClient() // defaults to durablefetch.fumabase.com
 
 // 1. Start a streaming request
-const res = await df.fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
+const res = await df.fetch(
+    'https://api.openai.com/v1/chat/completions?chatId=xxx',
+    {
+        method: 'POST',
+        body: JSON.stringify({
+            /* … */
+        }),
     },
-    body: JSON.stringify({
-        /* … */
-    }),
-})
+)
 
-const reader = res.body!.getReader()
-for (;;) {
-    const { value, done } = await reader.read()
-    if (done) break
-    console.log(new TextDecoder().decode(value))
-}
+// 2. Other fetch requests to the same url resumes the existing request or return the already completed response
 
-// 2. Ask whether the stream is still in progress (optional)
+// 3. Ask whether the stream is still in progress (optional)
 const status = await df.isInProgress(
-    'https://api.openai.com/v1/chat/completions',
+    'https://api.openai.com/v1/chat/completions?chatId=xxx',
 )
 console.log(status) // { inProgress: true, activeConnections: 1, chunksStored: 42, completed: false }
 ```
