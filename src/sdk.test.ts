@@ -3,7 +3,7 @@ import {
     EventSourceParserStream,
 } from 'eventsource-parser/stream'
 import { describe, it, expect } from 'vitest'
-import { defaultDurablefetchHost, DurableFetchClient } from './sdk'
+import { defaultDurablefetchHost, DurableFetchClient } from './sdk.js'
 
 describe(
     'DurableFetchClient',
