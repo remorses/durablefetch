@@ -12,6 +12,20 @@ export default {
             )
         }
 
+        // special case for the README demo
+        if (url.searchParams.get('randomId') === 'xxxx') {
+            url.searchParams.set(
+                'randomId',
+                Math.random().toString(36).substring(2, 18),
+            )
+            return new Response('', {
+                status: 307,
+                headers: {
+                    location: url.toString(),
+                },
+            })
+        }
+
         if (url.pathname === '/durablefetch-example-stream-sse') {
             const n = parseInt(url.searchParams.get('n') || '10')
 

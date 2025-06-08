@@ -13,7 +13,7 @@ Send a long-running request (e.g. OpenAI streaming), close the tab, come back la
 
 To see how durablefetch works you can try visiting this url in the browser in different tabs: https://durablefetch.fumabase.com/postman-echo.com/server-events/20?randomId=xxxx
 
-> ![IMPORTANT]
+> [!IMPORTANT]
 > durablefetch identifies requests by the URL, each different request should have an unique URL. For example for a ChatGPT like interface you would use the chat id or message id.
 
 ## Why?
@@ -57,3 +57,27 @@ const status = await df.isInProgress(
 )
 console.log(status) // { inProgress: true, activeConnections: 1, chunksStored: 42, completed: false }
 ```
+
+## Usage with the API (no SDK)
+
+durablefetch works by passing the host as the first part of the path, then the path of the url:
+
+```
+https://durablefetch.fumabase.com/:domain/*
+```
+
+So for example this request makes a fetch to `https://postman-echo.com/server-events/20?randomId=xxxx`
+
+```
+https://durablefetch.fumabase.com/postman-echo.com/server-events/20?randomId=xxxx
+```
+
+Always remember to make your URLs unique and non guessable
+
+## Security
+
+Always add a non guessable unique search parameter to the url so urls cannot be guessed and be used to read the response by non authrorized users.
+
+The response in durablefetch is deleted from the last use after 6 hours.
+
+If you are going to attach secret data to headers like authroization tokens you should self host in your own Cloudflare account.
