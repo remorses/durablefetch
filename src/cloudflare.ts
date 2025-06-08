@@ -1,8 +1,29 @@
 import { DurableObject } from 'cloudflare:workers'
 
+// Helper function to create CORS headers
+function getCorsHeaders(): Record<string, string> {
+    return {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods':
+            'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Expose-Headers': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+    }
+}
+
 export default {
     async fetch(req: Request, env: Env) {
         const url = new URL(req.url)
+
+        // Handle CORS preflight requests
+        if (req.method === 'OPTIONS') {
+            return new Response(null, {
+                status: 204,
+                headers: getCorsHeaders(),
+            })
+        }
 
         // Redirect root path to GitHub
         if (url.pathname === '/') {
@@ -22,6 +43,7 @@ export default {
                 status: 307,
                 headers: {
                     location: url.toString(),
+                    ...getCorsHeaders(),
                 },
             })
         }
@@ -55,6 +77,7 @@ export default {
                     'Cache-Control': 'no-cache',
                     'x-example': 'test',
                     Connection: 'keep-alive',
+                    ...getCorsHeaders(),
                 },
             })
         }
@@ -88,6 +111,14 @@ export class DurableFetch extends DurableObject {
 
     /* ------------------------------------------------------ */
     async fetch(req: Request): Promise<Response> {
+        // Handle CORS preflight requests
+        if (req.method === 'OPTIONS') {
+            return new Response(null, {
+                status: 204,
+                headers: getCorsHeaders(),
+            })
+        }
+
         // Extend the TTL immediately following every fetch request
         await this.state.storage.setAlarm(Date.now() + this.timeToLiveMs)
 
@@ -102,6 +133,7 @@ export class DurableFetch extends DurableObject {
         if (pathParts.length < 1) {
             return new Response('Invalid request: missing host in path', {
                 status: 400,
+                headers: getCorsHeaders(),
             })
         }
 
@@ -194,7 +226,11 @@ export class DurableFetch extends DurableObject {
         })
 
         return new Response(toClient, {
-            headers: { ...headers, 'cache-control': 'no-store' },
+            headers: {
+                ...headers,
+                'cache-control': 'no-store',
+                ...getCorsHeaders(),
+            },
         })
     }
 
@@ -215,7 +251,10 @@ export class DurableFetch extends DurableObject {
                 completed,
             }),
             {
-                headers: { 'content-type': 'application/json' },
+                headers: {
+                    'content-type': 'application/json',
+                    ...getCorsHeaders(),
+                },
             },
         )
     }
@@ -290,6 +329,7 @@ async function createDurableObjectRequest(url: URL, req: Request) {
             // This case should be handled by the root redirect but as a fallback.
             throw new Response('host not specified in path', {
                 status: 400,
+                headers: getCorsHeaders(),
             })
         }
 
