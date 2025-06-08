@@ -158,3 +158,7 @@ Always add a non guessable unique search parameter to the url so urls cannot be 
 The response in durablefetch is deleted from the last use after 6 hours.
 
 If you are going to attach secret data to headers like authroization tokens you should self host in your own Cloudflare account.
+
+## Demo
+
+Here is a demo AI app that uses durablefetch: https://github.com/remorses/durablefetch-ai-demo

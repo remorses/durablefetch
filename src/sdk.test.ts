@@ -13,6 +13,15 @@ describe(
         const randomId = Math.random().toString(36).substring(7)
         const sseUrl = `https://${defaultDurablefetchHost}/durablefetch-example-stream-sse?n=5&randomId=${randomId}`
         console.log(sseUrl)
+        it('can delete url', async () => {
+            const status = await client.delete(sseUrl)
+            expect(status).toMatchInlineSnapshot(`
+              {
+                "message": "Storage cleared",
+                "success": true,
+              }
+            `)
+        })
         it('should check in-progress status', async () => {
             const status = await client.isInProgress(sseUrl)
             expect(status).toMatchInlineSnapshot(`
@@ -52,11 +61,7 @@ describe(
             console.log('aborting')
             controller1.abort()
 
-            expect(events.map((e) => e.data)).toMatchInlineSnapshot(`
-              [
-                "{"number":1}",
-              ]
-            `)
+            expect(events.map((e) => e.data)).toMatchInlineSnapshot(`[]`)
         })
         it('should check in-progress status', async () => {
             const status = await client.isInProgress(sseUrl)
@@ -165,6 +170,30 @@ describe(
             `)
             expect(status.inProgress).toBe(false)
             expect(status.completed).toBe(true)
+        })
+        it('can delete url after full response', async () => {
+            const status = await client.delete(sseUrl)
+            expect(status).toMatchInlineSnapshot(`
+              {
+                "message": "Storage cleared",
+                "success": true,
+              }
+            `)
+        })
+        it('should continue resuming stream and get the last event 1', async () => {
+            const response3 = await client.fetch(sseUrl, {})
+            expect(response3.headers.get('x-example')).toBe('test')
+            const iterator3 = streamSseEvents(response3.body!)
+            const events = await collectGeneratorUntil(
+                iterator3,
+                iterationInterval,
+            )
+
+            expect(events.map((e) => e.data)).toMatchInlineSnapshot(`
+              [
+                "{"number":1}",
+              ]
+            `)
         })
     },
     30 * 1000,

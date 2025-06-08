@@ -104,4 +104,39 @@ export class DurableFetchClient {
             )
         }
     }
+
+    async delete(url: string | URL): Promise<{
+        success: boolean
+        message: string
+    }> {
+        const urlObj = this.resolveUrl(url)
+
+        if (isLocalhost(urlObj)) {
+            logger.warn(
+                `WARNING: durablefetch is bypassed for URL ${url.toString()}`,
+            )
+            return {
+                success: true,
+                message: 'Fake delete for localhost',
+            }
+        }
+
+        const deleteUrl = new URL('/delete', `https://${this.durablefetchHost}`)
+
+        const response = await fetch(deleteUrl.toString(), {
+            method: 'POST',
+            body: JSON.stringify({
+                url: urlObj.toString(),
+            }),
+        })
+
+        const text = await response.text()
+        try {
+            return JSON.parse(text)
+        } catch (e) {
+            throw new Error(
+                `/delete returned invalid JSON: ${text.slice(0, 1000)}`,
+            )
+        }
+    }
 }

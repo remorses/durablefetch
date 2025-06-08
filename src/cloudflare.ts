@@ -81,6 +81,17 @@ export default {
                 },
             })
         }
+
+        // Handle /delete POST requests
+        if (url.pathname === '/delete' && req.method === 'POST') {
+            const { key, requestForDO } = await createDurableObjectRequest(
+                url,
+                req,
+            )
+            const id = env.DURABLE_FETCH.idFromName(key)
+            return env.DURABLE_FETCH.get(id).fetch(requestForDO)
+        }
+
         const { key, requestForDO } = await createDurableObjectRequest(url, req)
         const id = env.DURABLE_FETCH.idFromName(key)
         return env.DURABLE_FETCH.get(id).fetch(requestForDO)
@@ -127,6 +138,11 @@ export class DurableFetch extends DurableObject {
         // Handle /in-progress POST requests
         if (url.pathname === '/in-progress' && req.method === 'POST') {
             return this.checkInProgress()
+        }
+
+        // Handle /delete POST requests
+        if (url.pathname === '/delete' && req.method === 'POST') {
+            return this.deleteStorage()
         }
         // Handle case where path parts are less than 1 (empty or root path)
         const pathParts = url.pathname.split('/').filter(Boolean)
@@ -300,6 +316,26 @@ export class DurableFetch extends DurableObject {
     }
 
     /* ------------------------------------------------------ */
+    /** Delete all storage for this key */
+    private async deleteStorage(): Promise<Response> {
+        await this.state.storage.deleteAll()
+        // Reset internal state
+        this.seq = 0
+        this.fetching = false
+        this.live.clear()
+
+        return new Response(
+            JSON.stringify({ success: true, message: 'Storage cleared' }),
+            {
+                headers: {
+                    'content-type': 'application/json',
+                    ...getCorsHeaders(),
+                },
+            },
+        )
+    }
+
+    /* ------------------------------------------------------ */
     /** TTL alarm handler - clean up all stored data */
     async alarm() {
         await this.state.storage.deleteAll()
@@ -313,6 +349,17 @@ export function sleep(ms: number): Promise<void> {
 async function createDurableObjectRequest(url: URL, req: Request) {
     // For /in-progress, the upstream URL is in the body.
     if (url.pathname === '/in-progress' && req.method === 'POST') {
+        const body = (await req.clone().json()) as any
+
+        const durableObjectKey = new URL(body.url)
+        const requestForDO = req
+        const key = durableObjectKey.toString()
+        console.log(`Using DO with key: ${key}`)
+
+        return { requestForDO, key }
+    }
+    // For /delete, the upstream URL is in the body.
+    else if (url.pathname === '/delete' && req.method === 'POST') {
         const body = (await req.clone().json()) as any
 
         const durableObjectKey = new URL(body.url)
