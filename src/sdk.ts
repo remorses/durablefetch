@@ -9,6 +9,10 @@ function isRelativePath(url: string): boolean {
 }
 const logger = console
 
+function isLocalhost(url: URL): boolean {
+    return url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+}
+
 export class DurableFetchClient {
     constructor(private options: { durablefetchHost?: string } = {}) {
         this.durablefetchHost =
@@ -16,8 +20,9 @@ export class DurableFetchClient {
     }
 
     private durablefetchHost: string
-
     private resolveUrl(input: string | URL | Request): URL {
+        let resolvedUrl: URL
+
         if (typeof input === 'string') {
             if (isRelativePath(input)) {
                 if (typeof window === 'undefined') {
@@ -25,17 +30,19 @@ export class DurableFetchClient {
                         'Cannot resolve relative URL in Node.js environment without base URL',
                     )
                 }
-                return new URL(input, window.location.href)
+                resolvedUrl = new URL(input, window.location.href)
             } else {
-                return new URL(input)
+                resolvedUrl = new URL(input)
             }
         } else if (input instanceof URL) {
-            return input
+            resolvedUrl = input
         } else if (input instanceof Request) {
-            return new URL(input.url)
+            resolvedUrl = new URL(input.url)
         } else {
-            return new URL(input)
+            resolvedUrl = new URL(input)
         }
+
+        return resolvedUrl
     }
 
     async fetch(
@@ -45,11 +52,16 @@ export class DurableFetchClient {
         const url = this.resolveUrl(input)
         const realHost = url.host
         const realPathname = url.pathname
+        if (isLocalhost(url)) {
+            console.warn(
+                `WARNING: durablefetch is bypassed for URL (${url.toString()})`,
+            )
+            return await fetch(url, init)
+        }
         url.host = this.durablefetchHost
         url.pathname = `/${realHost}${realPathname}`
 
-        logger.log(`fetching ${url.toString()}`)
-        return fetch(url.toString(), init)
+        return fetch(url, init)
     }
 
     async isInProgress(url: string | URL): Promise<{
@@ -60,12 +72,22 @@ export class DurableFetchClient {
     }> {
         const urlObj = this.resolveUrl(url)
 
+        if (isLocalhost(urlObj)) {
+            logger.warn(
+                `WARNING: durablefetch is bypassed for URL (${url.toString()})`,
+            )
+            return {
+                inProgress: false,
+                completed: false,
+                activeConnections: 0,
+                chunksStored: 0,
+            }
+        }
         const checkUrl = new URL(
             '/in-progress',
             `https://${this.durablefetchHost}`,
         )
 
-        logger.log(`fetching ${checkUrl.toString()}`)
         const response = await fetch(checkUrl.toString(), {
             method: 'POST',
             body: JSON.stringify({
