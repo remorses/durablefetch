@@ -145,7 +145,7 @@ describe(
             `)
         })
 
-        it('should continue resuming stream and get the last event 1', async () => {
+        it('should get the complete stream', async () => {
             const response3 = await client.fetch(sseUrl, {})
             expect(response3.headers.get('x-example')).toBe('test')
             const iterator3 = streamSseEvents(response3.body!)
@@ -184,7 +184,7 @@ describe(
               }
             `)
         })
-        it('should continue resuming stream and get the last event 1', async () => {
+        it('stream is restarted after delete', async () => {
             const response3 = await client.fetch(sseUrl, {})
             expect(response3.headers.get('x-example')).toBe('test')
             const iterator3 = streamSseEvents(response3.body!)
