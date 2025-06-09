@@ -106,6 +106,7 @@ export class DurableFetch extends DurableObject {
     private seq = 0 // next chunk index
     private fetching = false // upstream started?
     private live = new Set<WritableStreamDefaultWriter>()
+    private writerSeq = new WeakMap<WritableStreamDefaultWriter, number>()
     // Time To Live (TTL) in milliseconds
     private timeToLiveMs = 60 * 60 * 1000 * 6
 
@@ -200,7 +201,8 @@ export class DurableFetch extends DurableObject {
         const { readable, writable } = new TransformStream()
         const writer = writable.getWriter()
 
-        // 1️⃣ replay stored chunks with storage lock
+        // 1️⃣ replay stored chunks with storage lock and capture snapshot
+        let snapshot = 0
         await this.state.blockConcurrencyWhile(async () => {
             const storedChunks = await this.state.storage.list<Uint8Array>({
                 prefix: 'c:',
@@ -212,12 +214,19 @@ export class DurableFetch extends DurableObject {
             for (const [, value] of sortedChunks) {
                 writer.write(value)
             }
+            snapshot = this.seq // capture current sequence number
         })
 
         // 2️⃣ if upstream still open, keep streaming live
         if (this.fetching) {
             console.log(`already fetching ${req.url}, resuming stream`)
+
+            // Add to live set and track initial sequence
             this.live.add(writer)
+            this.writerSeq.set(writer, snapshot - 1) // seen up to snapshot-1
+
+            // Back-fill any gaps that occurred during replay
+            await this.backfillGaps(writer, snapshot)
         } else {
             // If completed or not started, close the writer
             writer.close()
@@ -239,6 +248,7 @@ export class DurableFetch extends DurableObject {
         // Also clean up writer if it gets closed for any reason
         writer.closed.catch(() => {
             this.live.delete(writer)
+            this.writerSeq.delete(writer)
         })
 
         return new Response(toClient, {
@@ -293,11 +303,15 @@ export class DurableFetch extends DurableObject {
                 this.seq++
                 await this.state.storage.put('seq', this.seq)
 
-                // Broadcast
+                // Broadcast to writers that haven't seen this chunk yet
                 for (const w of this.live) {
-                    try {
-                        w.write(value)
-                    } catch {}
+                    const lastSeen = this.writerSeq.get(w) ?? -1
+                    if (lastSeen < this.seq) {
+                        try {
+                            w.write(value)
+                            this.writerSeq.set(w, this.seq) // update seen sequence
+                        } catch {}
+                    }
                 }
             }
         } finally {
@@ -333,6 +347,36 @@ export class DurableFetch extends DurableObject {
                 },
             },
         )
+    }
+
+    /* ------------------------------------------------------ */
+    /** Back-fill any chunks that were written while this writer was joining */
+    private async backfillGaps(
+        writer: WritableStreamDefaultWriter,
+        startSeq: number,
+    ) {
+        let cursor = startSeq
+        const pad = (n: number) => n.toString().padStart(9, '0')
+
+        while (cursor < this.seq) {
+            const currentSeq = this.seq // capture current seq to handle concurrent writes
+            const gap = await this.state.storage.list<Uint8Array>({
+                prefix: 'c:',
+                start: `c:${pad(cursor)}`,
+                end: `c:${pad(currentSeq)}`,
+            })
+
+            for (const [, chunk] of gap) {
+                try {
+                    writer.write(chunk)
+                    cursor++
+                } catch {
+                    // Writer closed, stop backfilling
+                    return
+                }
+            }
+            this.writerSeq.set(writer, cursor - 1) // update progress
+        }
     }
 
     /* ------------------------------------------------------ */

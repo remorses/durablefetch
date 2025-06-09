@@ -61,7 +61,11 @@ describe(
             console.log('aborting')
             controller1.abort()
 
-            expect(events.map((e) => e.data)).toMatchInlineSnapshot(`[]`)
+            expect(events.map((e) => e.data)).toMatchInlineSnapshot(`
+              [
+                "{"number":1}",
+              ]
+            `)
         })
         it('should check in-progress status', async () => {
             const status = await client.isInProgress(sseUrl)
