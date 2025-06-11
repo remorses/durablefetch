@@ -7,7 +7,12 @@ Send a long-running request (e.g. OpenAI streaming), close the tab, come back la
 - **Zero-config** CDN endpoint: `https://durablefetch.com`
 - **Self-host** in minutes (Cloudflare Workers)
 
----
+## Use cases
+
+1. Add resumability to a ChatGPT like interface. Allow user to send message and close the browser.
+1. Run long running jobs in the background. Let the user submit a form and close the browser while the server runs a long running task
+1. Start long running cronjobs with GitHub actions without consuming Actions minutes and money, start the request and abort it right after, durablefetch will keep the request running.
+1. Run image generation in the background.
 
 ## Example
 
@@ -28,14 +33,6 @@ Typical HTTP streams die when the client disconnects.
 5. Once the origin finishes, the DO marks the conversation complete; subsequent callers just get the full buffered response.
 
 Persistence lasts for a few hours (6 hours by default).
-
-## Use cases
-
-1. Add resumability to a ChatGPT like interface. Allow user to send message and close the browser.
-1. Run long running jobs in the background. Let the user submit a form and close the browser while the server runs a long running task
-1. Start long running cronjobs with GitHub actions without consuming Actions minutes and money, start the request and abort it right after, durablefetch will keep the request running.
-
----
 
 ## Quick start with AI SDK
 
