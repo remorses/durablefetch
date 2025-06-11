@@ -87,9 +87,10 @@ export function Chat({ chatId }) {
             </div>
 
             <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                     e.preventDefault()
                     const message = new FormData(e.currentTarget).get('message')
+                    await df.delete(api) // clear durablefetch state so new message makes a new request
                     sendMessage({ text: message })
                     localStorage.setItem('lastMessage', message)
                     e.currentTarget.reset()
