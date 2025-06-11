@@ -29,6 +29,12 @@ Typical HTTP streams die when the client disconnects.
 
 Persistence lasts for a few hours (6 hours by default).
 
+## Use cases
+
+1. Add resumability to a ChatGPT like interface. Allow user to send message and close the browser.
+1. Run long running jobs in the background. Let the user submit a form and close the browser while the server runs a long running task
+1. Start long running cronjobs with GitHub actions without consuming Actions minutes and money, start the request and abort it right after, durablefetch will keep the request running.
+
 ---
 
 ## Quick start with AI SDK
