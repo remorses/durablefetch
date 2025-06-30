@@ -38,6 +38,9 @@ Persistence lasts for a few hours (6 hours by default).
 
 Simply replace the default fetch with durablefetch to make sure the AI response is resumed if an existing one is alreay in progress.
 
+> [!WARNING]
+> when using an url with `localhost` durablefetch will by bypassed, this is because the server cannot reach your localhost server
+
 ```tsx
 import { DefaultChatTransport } from 'ai'
 import { DurableFetchClient } from 'durablefetch'
