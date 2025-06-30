@@ -251,12 +251,16 @@ export class DurableFetch extends DurableObject {
             this.writerSeq.delete(writer)
         })
 
+        // Remove any existing CORS headers to prevent duplication
+        const cleanHeaders = new Headers(headers)
+        cleanHeaders.set('cache-control', 'no-store')
+        const corsHeaders = getCorsHeaders()
+        for (const [key, value] of Object.entries(corsHeaders)) {
+            cleanHeaders.set(key, value)
+        }
+
         return new Response(toClient, {
-            headers: {
-                ...headers,
-                'cache-control': 'no-store',
-                ...getCorsHeaders(),
-            },
+            headers: cleanHeaders,
         })
     }
 
