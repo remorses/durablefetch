@@ -10,7 +10,11 @@ function isRelativePath(url: string): boolean {
 const logger = console
 
 function isLocalhost(url: URL): boolean {
-    return url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+    return (
+        url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1' ||
+        url.hostname.endsWith('.localhost')
+    )
 }
 
 export class DurableFetchClient {
