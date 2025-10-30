@@ -67,6 +67,91 @@ await df.delete('https://api.example.com/endpoint?id=123')
 // Next fetch will start a new upstream request
 ```
 
+### Retry example with SSE and state persistence
+
+Here's a complete example showing how to implement retries with durablefetch, including SSE error handling and state persistence:
+
+```ts
+import { DurableFetchClient } from 'durablefetch'
+
+const df = new DurableFetchClient()
+
+async function processStreamWithRetries(taskId: string) {
+    const url = `https://api.example.com/stream?taskId=${taskId}`
+    const stateKey = `stream-state-${taskId}`
+
+    let retryCount = 0
+    const maxRetries = 3
+
+    // Load previous state from localStorage (for resume after errors)
+    let state = localStorage.getItem(stateKey)
+        ? JSON.parse(localStorage.getItem(stateKey)!)
+        : { itemsProcessed: 0, lastItemId: null }
+
+    while (retryCount < maxRetries) {
+        try {
+            // durablefetch will replay any previously cached response from this URL:
+            // - If user left the page and came back: replays all previous chunks then continues
+            //   the live stream, making it seamless as if they never left
+            // - If previous response had an SSE error: replays the previous events, we update state, we catch the error,
+            //   delete the cache, and retry with a fresh request
+            const response = await df.fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({
+                    resumeFrom: state.lastItemId // Pass state to resume from where we left off
+                }),
+            })
+
+            // Parse SSE stream and handle errors
+            for await (const event of parseSSE(response.body!)) {
+                // SSE error events indicate server-side errors
+                // These errors should trigger a retry
+                if (event.event === 'error') {
+                    throw new Error(`SSE error: ${event.data}`)
+                }
+
+                // Process successful events
+                const data = JSON.parse(event.data)
+                console.log('Processing item:', data.itemId)
+
+                // Update state as we process items
+                state = {
+                    itemsProcessed: state.itemsProcessed + 1,
+                    lastItemId: data.itemId
+                }
+
+                // Persist state for resume capability
+                localStorage.setItem(stateKey, JSON.stringify(state))
+            }
+
+            // Success! Clear state and cached response
+            localStorage.removeItem(stateKey)
+            await df.delete(url)
+            return state
+
+        } catch (error) {
+            // Always delete cached response on error so retry gets fresh data
+            await df.delete(url)
+
+            retryCount++
+            console.error(`Stream error (attempt ${retryCount}/${maxRetries}):`, error)
+
+            if (retryCount >= maxRetries) {
+                console.error('Max retries reached')
+                throw error
+            }
+
+            // Wait before retry with exponential backoff
+            const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000)
+            console.log(`Waiting ${delay}ms before retry...`)
+            await sleep(delay)
+
+            console.log(`Retrying from state:`, state)
+        }
+    }
+}
+```
+
 ## Quick start with AI SDK
 
 Simply replace the default fetch with durablefetch to make sure the AI response is resumed if an existing one is alreay in progress.
