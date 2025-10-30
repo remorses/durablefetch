@@ -34,6 +34,39 @@ Typical HTTP streams die when the client disconnects.
 
 Persistence lasts for a few hours (6 hours by default).
 
+## How durablefetch handles retries and errors
+
+### Automatic retries
+
+**durablefetch does NOT automatically retry failed requests.** If you need retry logic with exponential backoff, you should implement it client-side.
+
+### Response caching and replay behavior
+
+- **Successful responses (2xx status codes)**: The response body is cached and replayed on subsequent fetches to the same URL. This cache persists for up to 6 hours (configurable) or until you call `df.delete(url)`.
+
+- **Failed responses (non-2xx status codes)**: Error responses are NOT cached. Each new request with the same URL will trigger a fresh upstream fetch to the server. This allows transient errors to be retried by making a new request.
+
+Example:
+```ts
+const df = new DurableFetchClient()
+
+// First request returns 500 error
+const res1 = await df.fetch('https://api.example.com/endpoint?id=123')
+console.log(res1.status) // 500
+
+// Second request to same URL will retry the upstream server (not replay cached error)
+const res2 = await df.fetch('https://api.example.com/endpoint?id=123')
+console.log(res2.status) // May succeed with 200 if the error was transient
+```
+
+### When to use df.delete()
+
+Call `df.delete(url)` to clear the cached response when you want to make a completely fresh request:
+```ts
+await df.delete('https://api.example.com/endpoint?id=123')
+// Next fetch will start a new upstream request
+```
+
 ## Quick start with AI SDK
 
 Simply replace the default fetch with durablefetch to make sure the AI response is resumed if an existing one is alreay in progress.
